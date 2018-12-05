@@ -68,7 +68,6 @@ class player:
         return self.__chosenCards
 
     def withinHand(self, playerChoice):
-        """
         cardsLeft = 0
         if playerChoice<0:
             return 1
@@ -79,20 +78,18 @@ class player:
             return 1
         else:
             return 0
-        """
         try:
             if self.__playerCards[playerChoice-1]!=["",""]:
                 return 0
         except IndexError:
             return 1
 
-
-
     def getHand(self):
         return self.__playerCards
 
 class gui:
     def __init__(self):
+        message.showinfo("Instructions", "Click on your card to play it.")
         self.canvas_width = 800
         self.canvas_height = 800
         self.cardWidth = (self.canvas_width-60)/5
@@ -102,7 +99,6 @@ class gui:
         self.w = tk.Canvas(self.master,
             width=self.canvas_width,
             height=self.canvas_height)
-        message.showinfo("Instructions", "Click on your card to play it.")
 
     def drawCards(self, cardArray):
         for i in range(0, len(cardArray)):
@@ -134,13 +130,24 @@ def winningCard(playerCard, opponentCard, winArray):
 
 
 def main():
+
+    root = tk.Tk()
+
+    top = tk.Frame(root)
+
+    tk.Button(top, text="Play", command=startGame).pack()
+    tk.Button(top, text="Instructions", command=instructions).pack()
+    top.pack()
+
+    root.mainloop()
+
+def startGame():
     #Game Attributes
     User = player()
     Computer = player()
     UserChoice = 0
     ComputerChoice = 0
     wins = [0, 0]
-    playAgain = ""
 
     graphics = gui()
     graphics.drawCards(User.getHand())
@@ -166,14 +173,24 @@ def main():
 
         winningCard(User.getChosenCard(), Computer.getChosenCard(), wins)
         print("\n")
+    playAgain()
 
-    while playAgain!="Y" and playAgain!="N":
-        playAgain = input("Do you want to play again? Y/N")
-        playAgain = playAgain.upper()
-        if playAgain!="Y" and playAgain!="N":
-            print("That is not a correct Answer. Try Again.")
+def playAgain():
+    screen = tk.Tk()
+    top = tk.Frame(screen)
 
-    if playAgain=="Y":
-        main()
+    question = tk.Label(top, text="Do you want to play again?").pack()
+    yes = tk.Button(top, text="Yes", command=startGame).pack()
+    no = tk.Button(top, text="No", command=screen.destroy)
+
+def instructions():
+    instructionScreen = tk.Tk()
+    top = tk.Frame(instructionScreen)
+
+    instructionLabel = tk.Label(top, text="You and the opponent are both given five cards. \n To win, you have to place down a higher number card than the opponent. \n(Aces are 1, Jacks are 11, Queens are 12, and Kings are 13). \nTo play, click on your card.").pack()
+    top.pack()
+
+    top.mainloop()
+
 
 main()
