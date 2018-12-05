@@ -1,0 +1,179 @@
+import random
+import tkinter as tk
+import tkinter.messagebox as message
+
+cards = {
+    "club": {
+        "A": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "10": "10", "J": "11", "Q": "12", "K": "13"
+    },
+    "diamond": {
+        "A": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "10": "10", "J": "11", "Q": "12", "K": "13"
+    },
+    "heart": {
+        "A": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "10": "10", "J": "11", "Q": "12", "K": "13"
+    },
+    "spade": {
+        "A": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "10": "10", "J": "11", "Q": "12", "K": "13"
+    }
+}
+
+class player:
+    def __init__(self):
+        self.__playerCards = [["", ""], ["", ""], ["", ""], ["", ""], ["", ""]]
+        self.__chosenCards = ["", ""]
+        for i in range(0, 5):
+            self.__playerCards[i][0] = self.getSuit(random.randint(1, 4))
+            self.__playerCards[i][1] = self.getCard(random.randint(1, 13))
+
+    def getSuit(self, suitNumber):
+        if suitNumber==1:
+            return "club"
+        elif suitNumber==2:
+            return "diamond"
+        elif suitNumber==3:
+            return "heart"
+        else:
+            return "spade"
+
+    def getCard(self, cardNumber):
+        if cardNumber>=2 and cardNumber<=10:
+            return str(cardNumber)
+        elif cardNumber == 1:
+            return "A"
+        elif cardNumber == 11:
+            return "J"
+        elif cardNumber == 12:
+            return "Q"
+        else:
+            return "K"
+
+    def showCards(self):
+        print("Here are the cards you have:")
+        for i in range(0, 5):
+            if self.__playerCards[i]!=["", ""]:
+                print(str(i+1) + ". " + self.__playerCards[i][1] + " of " + self.__playerCards[i][0])
+
+    def chooseCard(self, playerChoice):
+        playerChoice -= 1
+        self.__chosenCards[0] = self.__playerCards[playerChoice][0]
+        self.__chosenCards[1] = self.__playerCards[playerChoice][1]
+        self.__playerCards[playerChoice] = ["", ""]
+        while playerChoice<4:
+            self.__playerCards[playerChoice] = self.__playerCards[playerChoice+1]
+            self.__playerCards[playerChoice+1] = ["", ""]
+            playerChoice += 1
+        return self.__playerCards
+
+    def getChosenCard(self):
+        return self.__chosenCards
+
+    def withinHand(self, playerChoice):
+        """
+        cardsLeft = 0
+        if playerChoice<0:
+            return 1
+        for i in range(1, 6):
+            if self.__playerCards[i-1] != ["", ""]:
+                cardsLeft = i
+        if playerChoice>cardsLeft:
+            return 1
+        else:
+            return 0
+        """
+        try:
+            if self.__playerCards[playerChoice-1]!=["",""]:
+                return 0
+        except IndexError:
+            return 1
+
+
+
+    def getHand(self):
+        return self.__playerCards
+
+class gui:
+    def __init__(self):
+        self.canvas_width = 800
+        self.canvas_height = 800
+        self.cardWidth = (self.canvas_width-60)/5
+        self.cardHeight = self.canvas_height/4
+        self.master = tk.Tk()
+
+        self.w = tk.Canvas(self.master,
+            width=self.canvas_width,
+            height=self.canvas_height)
+        message.showinfo("Instructions", "Click on your card to play it.")
+
+    def drawCards(self, cardArray):
+        for i in range(0, len(cardArray)):
+            card_x = 10+(i*(self.cardWidth+10))
+            card_y = self.canvas_height-self.cardHeight-20
+            self.w.create_rectangle(card_x, card_y, self.cardWidth+card_x, self.cardHeight+card_y+10, fill="white")
+
+            canvas_id = self.w.create_text(20+((self.cardWidth+10)*i), card_y+10, anchor="nw")
+
+            self.w.itemconfig(canvas_id, text=cardArray[i][1])
+
+
+        self.w.pack()
+        self. w.mainloop()
+
+
+def winningCard(playerCard, opponentCard, winArray):
+    try:
+        if int(cards[playerCard[0]][playerCard[1]]) < int(cards[opponentCard[0]][opponentCard[1]]):
+            print("You won! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
+            winArray[0] = winArray[0] + 1
+        elif int(cards[playerCard[0]][playerCard[1]]) > int(cards[opponentCard[0]][opponentCard[1]]):
+            print("You lost! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
+            winArray[1] = winArray[1] + 1
+        else:
+            print("You tied! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
+    except KeyError:
+        print("You got a Key Error. It is: " + str(KeyError))
+
+
+def main():
+    #Game Attributes
+    User = player()
+    Computer = player()
+    UserChoice = 0
+    ComputerChoice = 0
+    wins = [0, 0]
+    playAgain = ""
+
+    graphics = gui()
+    graphics.drawCards(User.getHand())
+
+    for i in range(0, 5):
+
+        #user's Choice for Card
+        User.showCards()
+        UserChoice = int(input("Enter Your Choice:"))
+        while User.withinHand(UserChoice):
+            print("That is not a correct Choice. Try again.")
+            UserChoice = int(input("Enter Your Choice:"))
+
+        User.chooseCard(UserChoice)
+
+        # computer's Choice for Card
+        ComputerChoice = random.randint(1,5-i)
+        while User.withinHand(ComputerChoice):
+            ComputerChoice = random.randint(1,6-i)
+            if i==4:
+                ComputerChoice = 1
+        Computer.chooseCard(ComputerChoice)
+
+        winningCard(User.getChosenCard(), Computer.getChosenCard(), wins)
+        print("\n")
+
+    while playAgain!="Y" and playAgain!="N":
+        playAgain = input("Do you want to play again? Y/N")
+        playAgain = playAgain.upper()
+        if playAgain!="Y" and playAgain!="N":
+            print("That is not a correct Answer. Try Again.")
+
+    if playAgain=="Y":
+        main()
+
+main()
