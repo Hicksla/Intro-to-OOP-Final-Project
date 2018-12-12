@@ -82,123 +82,167 @@ class player:
     def getHand(self):
         return self.__playerCards
 
+    def newHand(self):
+        for i in range(0, 5):
+            self.__playerCards[i][0] = self.getSuit(random.randint(1, 4))
+            self.__playerCards[i][1] = self.getCard(random.randint(1, 13))
+
+
 class gui:
     def __init__(self):
         self.canvas_width = 800
         self.canvas_height = 800
         self.cardWidth = (self.canvas_width-60)/5
         self.cardHeight = self.canvas_height/4
+        self.cardPos = [[[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]]]
+        self.turn = 0
+        self.wins = [0, 0, 0]
+
+        #Game Attributes
+        self.User = player()
+        self.Computer = player()
+
+    def mainMenu(self):
+        self.root = tk.Tk()
+
+        top = tk.Frame(self.root)
+
+        tk.Button(top, text="Play", command=self.destroyMainMenu).pack()
+        tk.Button(top, text="Instructions", command=self.instructions).pack()
+        top.pack()
+
+        self.root.mainloop()
+
+    def instructions(self):
+        self.root.destroy()
+        self.instructionScreen = tk.Tk()
+        top = tk.Frame(self.instructionScreen)
+
+        instructionLabel = tk.Label(top,
+                                    text="You and the opponent are both given five cards. \n To win, you have to place down a higher number card than the opponent. \n(Aces are 1, Jacks are 11, Queens are 12, and Kings are 13). \nTo play, click on your card.").pack()
+
+        tk.Button(top, text="Return to main menu", command=self.destroyInstructions).pack()
+        top.pack()
+
+        top.mainloop()
+
+    def destroyInstructions(self):
+        self.instructionScreen.destroy()
+        self.mainMenu()
+
+    def destroyMainMenu(self):
+        self.root.destroy()
+        self.initGame()
+
+    def initGame(self):
+
         self.master = tk.Tk()
 
         self.w = tk.Canvas(self.master,
             width=self.canvas_width,
             height=self.canvas_height)
 
+        self.w.bind("<Button-1>", self.checkCard)
+        self.drawCards(self.User.getHand())
+        self.drawOppCards(self.Computer.getHand())
+        self.drawWins()
+
+    def newGame(self):
+        self.turn = 0
+        self.wins = [0, 0, 0]
+        self.screen.destroy()
+        self.User.newHand()
+        self.Computer.newHand()
+        self.drawCards(self.User.getHand())
+        self.drawOppCards(self.Computer.getHand())
+        self.drawWins()
+
     def drawCards(self, cardArray):
         for i in range(0, len(cardArray)):
-            card_x = 10+(i*(self.cardWidth+10))
-            card_y = self.canvas_height-self.cardHeight-20
-            self.w.create_rectangle(card_x, card_y, self.cardWidth+card_x, self.cardHeight+card_y+10, fill="white")
+            self.card_x = 10+(i*(self.cardWidth+10))
+            self.card_y = self.canvas_height-self.cardHeight-20
+            self.cardPos[i][0][0] = self.card_x
+            self.cardPos[i][0][1] = self.card_y
+            self.cardPos[i][1][0] = self.cardWidth+self.card_x
+            self.cardPos[i][1][1] = self.cardHeight+self.card_y+10
+            if cardArray[i]!=["",""]:
+                self.w.create_rectangle(self.cardPos[i][0][0], self.cardPos[i][0][1], self.cardPos[i][1][0], self.cardPos[i][1][1], fill="white")
 
-            canvas_id = self.w.create_text(20+((self.cardWidth+10)*i), card_y+10, anchor="nw")
+                upperLeftCard = self.w.create_text(25+((self.cardWidth+10)*i), self.card_y+15, anchor="n", text=cardArray[i][1])
 
-            self.w.itemconfig(canvas_id, text=cardArray[i][1])
+                lowerRightCard = self.w.create_text(((self.cardWidth+10)*i)+self.cardWidth-5, self.card_y+self.cardHeight-5, anchor="s", text=cardArray[i][1])
 
-
+                suit = self.w.create_text(((self.cardWidth+10)*i)+self.cardWidth/2-10, self.card_y+self.cardHeight/2-10, anchor="w", text=cardArray[i][0], font="Helvetica 12 bold")
         self.w.pack()
 
     def drawOppCards(self, cardArray):
         for i in range(0, len(cardArray)):
             card_x = 10+(i*(self.cardWidth+10))
             card_y = 20
-            self.w.create_rectangle(card_x, card_y, self.cardWidth+card_x, self.cardHeight+card_y+10, fill="white")
+            if cardArray[i]!=["",""]:
+                self.w.create_rectangle(card_x, card_y, self.cardWidth+card_x, self.cardHeight+card_y+10, fill="white", tag="opp"+str(i))
 
-            canvas_id = self.w.create_text(20+((self.cardWidth+10)*i), card_y+10, anchor="nw")
+                self.w.create_rectangle(card_x+10, card_y+10, self.cardWidth+card_x-10, self.cardHeight+card_y, fill="red", tag="opp"+str(i))
 
-            self.w.itemconfig(canvas_id, text=cardArray[i][1])
+        self.w.pack()
 
+    def checkCard(self, event):
+        mouseX = event.x
+        mouseY = event.y
+        for i in range(0, 5):
+            if mouseX >= self.cardPos[i][0][0] and mouseX <= self.cardPos[i][1][0]:
+                if mouseY >= self.cardPos[i][0][1] and mouseY <= self.cardPos[i][1][1]:
+                    self.User.chooseCard(i+1)
+                    self.turn += 1
 
+                    computerChoice = random.randint(1, 6-self.turn)
+                    self.Computer.chooseCard(computerChoice)
+                    compChosenCard = self.Computer.getChosenCard()
+
+                    self.w.delete("opp"+str(computerChoice))
+
+                    computersCards = self.Computer.getChosenCard()
+                    playersCards = self.User.getChosenCard()
+                    message.showinfo("Cards", "Your card was " + str(playersCards[1]) + " of " + str(playersCards[0]) + " while the opponent's card was " + str(playersCards[1]) + " of " + str(playersCards[0]))
+
+                    self.compareCards(playersCards, computersCards)
+
+        self.w.delete("all")
+        if self.turn == 5:
+            self.playAgain()
+        else:
+            self.drawCards(self.User.getHand())
+            self.drawOppCards(self.Computer.getHand())
+            self.drawWins()
+
+    def compareCards(self, playersCards, computersCards):
+        if int(cards[playersCards[0]][playersCards[1]]) > int(cards[computersCards[0]][computersCards[1]]):
+            self.wins[0] += 1
+        if int(cards[playersCards[0]][playersCards[1]]) == int(cards[computersCards[0]][computersCards[1]]):
+            self.wins[1] += 1
+        if int(cards[playersCards[0]][playersCards[1]]) < int(cards[computersCards[0]][computersCards[1]]):
+            self.wins[2] += 1
+
+    def drawWins(self):
+        self.w.create_text(40, self.canvas_height/2-10, text="Wins: "+str(self.wins[0]))
+        self.w.create_text(40, self.canvas_height/2, text="Ties: "+str(self.wins[1]))
+        self.w.create_text(40, self.canvas_height/2+10, text="Losses: "+str(self.wins[2]))
         self.w.pack()
         self.w.mainloop()
 
+    def playAgain(self):
+        self.screen = tk.Tk()
+        top = tk.Frame(self.screen)
 
-def winningCard(playerCard, opponentCard, winArray):
-    try:
-        if int(cards[playerCard[0]][playerCard[1]]) < int(cards[opponentCard[0]][opponentCard[1]]):
-            print("You won! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
-            winArray[0] = winArray[0] + 1
-        elif int(cards[playerCard[0]][playerCard[1]]) > int(cards[opponentCard[0]][opponentCard[1]]):
-            print("You lost! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
-            winArray[1] = winArray[1] + 1
-        else:
-            print("You tied! You had " + str(playerCard[1]) + " of " + str(playerCard[0]) + " while the computer had " + str(opponentCard[1]) + " of " + str(opponentCard[0]) + ".")
-    except KeyError:
-        print("You got a Key Error. It is: " + str(KeyError))
+        question = tk.Label(top, text="You ended the game with " + str(self.wins[0]) + " wins, " + str(self.wins[1]) + " ties, and " + str(self.wins[2]) + " losses. Do you want to play again?").pack()
+        yes = tk.Button(top, text="Yes", command=self.newGame).pack()
+        no = tk.Button(top, text="No", command=self.endGame).pack()
 
+        top.pack()
 
-def main():
+    def endGame(self):
+        self.master.destroy()
+        self.screen.destroy()
 
-    root = tk.Tk()
-
-    top = tk.Frame(root)
-
-    tk.Button(top, text="Play", command=startGame).pack()
-    tk.Button(top, text="Instructions", command=instructions).pack()
-    top.pack()
-
-    root.mainloop()
-
-def startGame():
-    #Game Attributes
-    User = player()
-    Computer = player()
-    graphics = gui()
-    UserChoice = 0
-    ComputerChoice = 0
-    wins = [0, 0]
-    for i in range(0, 5):
-        graphics.drawCards(User.getHand())
-        graphics.drawOppCards(Computer.getHand())
-
-    for i in range(0, 5):
-
-        #user's Choice for Card
-        User.showCards()
-        UserChoice = int(input("Enter Your Choice:"))
-        while User.withinHand(UserChoice):
-            print("That is not a correct Choice. Try again.")
-            UserChoice = int(input("Enter Your Choice:"))
-
-        User.chooseCard(UserChoice)
-
-        # computer's Choice for Card
-        ComputerChoice = random.randint(1,5-i)
-        while User.withinHand(ComputerChoice):
-            ComputerChoice = random.randint(1,6-i)
-            if i==4:
-                ComputerChoice = 1
-        Computer.chooseCard(ComputerChoice)
-
-        winningCard(User.getChosenCard(), Computer.getChosenCard(), wins)
-        print("\n")
-    playAgain()
-
-def playAgain():
-    screen = tk.Tk()
-    top = tk.Frame(screen)
-
-    question = tk.Label(top, text="Do you want to play again?").pack()
-    yes = tk.Button(top, text="Yes", command=startGame).pack()
-    no = tk.Button(top, text="No", command=screen.destroy)
-
-def instructions():
-    instructionScreen = tk.Tk()
-    top = tk.Frame(instructionScreen)
-
-    instructionLabel = tk.Label(top, text="You and the opponent are both given five cards. \n To win, you have to place down a higher number card than the opponent. \n(Aces are 1, Jacks are 11, Queens are 12, and Kings are 13). \nTo play, click on your card.").pack()
-    top.pack()
-
-    top.mainloop()
-
-
-main()
+graphics = gui()
+graphics.mainMenu()
